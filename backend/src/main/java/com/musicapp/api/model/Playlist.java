@@ -1,0 +1,73 @@
+package com.musicapp.api.model;
+
+import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Table(name = "playlists")
+public class Playlist {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(name = "cover_url")
+    private String coverUrl;
+
+    @ManyToMany
+    @JoinTable(name = "playlist_tracks", joinColumns = @JoinColumn(name = "playlist_id"), inverseJoinColumns = @JoinColumn(name = "track_id"))
+    private Set<Track> tracks = new HashSet<>();
+
+    public Playlist() {
+    }
+
+    public Playlist(String name, String coverUrl) {
+        this.name = name;
+        this.coverUrl = coverUrl;
+    }
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getCoverUrl() {
+        return coverUrl;
+    }
+
+    public void setCoverUrl(String coverUrl) {
+        this.coverUrl = coverUrl;
+    }
+
+    public Set<Track> getTracks() {
+        return tracks;
+    }
+
+    public void setTracks(Set<Track> tracks) {
+        this.tracks = tracks;
+    }
+
+    public void addTrack(Track track) {
+        this.tracks.add(track);
+    }
+
+    public void removeTrack(Track track) {
+        this.tracks.remove(track);
+    }
+}

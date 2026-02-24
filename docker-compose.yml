@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: musicapp_db
+    environment:
+      POSTGRES_USER: musicapp_user
+      POSTGRES_PASSWORD: musicapp_password
+      POSTGRES_DB: musicapp
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio
+    container_name: musicapp_storage
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  minio_data:

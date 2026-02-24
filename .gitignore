@@ -1,0 +1,39 @@
+# Android
+**/build/
+*.iml
+.gradle/
+local.properties
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aar
+*.jks
+*.keystore
+
+# Backend (Java/Gradle)
+**/build/
+.gradle/
+bin/
+!src/main/resources/com/templates/**
+.project
+.classpath
+.settings/
+*.log
+
+# System/IDE
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.bak
+*.tmp
+
+# App Specific
+.env
