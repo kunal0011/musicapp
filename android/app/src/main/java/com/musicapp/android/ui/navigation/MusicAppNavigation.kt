@@ -4,24 +4,19 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
+import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import androidx.navigation.NavType
-import com.musicapp.android.ui.screens.HomeScreen
-import com.musicapp.android.ui.screens.LibraryScreen
-import com.musicapp.android.ui.screens.PlayerScreen
-import com.musicapp.android.ui.screens.SearchScreen
-import com.musicapp.android.ui.screens.PlaylistDetailScreen
-
+import com.musicapp.android.data.local.TrackDao
+import com.musicapp.android.ui.screens.*
 import com.musicapp.android.viewmodels.PlayerViewModel
 
 @Composable
 fun MusicAppNavigation(
     navController: NavHostController,
     paddingValues: PaddingValues,
-    playerViewModel: PlayerViewModel
+    playerViewModel: PlayerViewModel,
+    trackDao: TrackDao? = null
 ) {
     NavHost(
         navController = navController,
@@ -37,13 +32,27 @@ fun MusicAppNavigation(
         composable(Screen.Library.route) {
             LibraryScreen(navController = navController)
         }
+        composable(Screen.LikedSongs.route) {
+            LikedSongsScreen(playerViewModel = playerViewModel)
+        }
+        composable(Screen.Queue.route) {
+            QueueScreen(playerViewModel = playerViewModel)
+        }
+        composable(Screen.Equalizer.route) {
+            EqualizerScreen()
+        }
+        composable(Screen.Offline.route) {
+            if (trackDao != null) {
+                OfflineScreen(trackDao = trackDao, playerViewModel = playerViewModel)
+            }
+        }
         composable(
             route = Screen.PlaylistDetail.route,
             arguments = listOf(navArgument("playlistId") { type = NavType.LongType })
-        ) { backStackEntry ->
-            val playlistId = backStackEntry.arguments?.getLong("playlistId") ?: return@composable
+        ) { back ->
+            val playlistId = back.arguments?.getLong("playlistId") ?: return@composable
             PlaylistDetailScreen(
-                navController = navController, 
+                navController = navController,
                 playlistId = playlistId,
                 playerViewModel = playerViewModel
             )

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.musicapp.android.models.Track
 import com.musicapp.android.repository.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,33 +20,31 @@ class HomeViewModel @Inject constructor(
     private val _tracks = MutableStateFlow<List<Track>>(emptyList())
     val tracks: StateFlow<List<Track>> = _tracks.asStateFlow()
 
+    private val _recentlyPlayed = MutableStateFlow<List<Track>>(emptyList())
+    val recentlyPlayed: StateFlow<List<Track>> = _recentlyPlayed.asStateFlow()
+
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    init {
-        fetchTracks()
-    }
+    init { load() }
 
-    private fun fetchTracks() {
+    fun load() {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
-            
-            val result = trackRepository.getAllTracks()
-            result.onSuccess { trackList ->
-                _tracks.value = trackList
-            }.onFailure { error ->
-                _errorMessage.value = error.message ?: "Failed to fetch tracks"
-            }
-            
+
+            val tracksDeferred = async { trackRepository.getAllTracks() }
+            val recentDeferred = async { trackRepository.getRecentlyPlayed() }
+
+            tracksDeferred.await().onSuccess { _tracks.value = it }
+                .onFailure { _errorMessage.value = it.message }
+
+            recentDeferred.await().onSuccess { _recentlyPlayed.value = it }
+
             _isLoading.value = false
         }
-    }
-    
-    fun retry() {
-        fetchTracks()
     }
 }

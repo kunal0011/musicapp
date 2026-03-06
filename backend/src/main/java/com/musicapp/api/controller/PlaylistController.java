@@ -1,53 +1,50 @@
 package com.musicapp.api.controller;
 
 import com.musicapp.api.model.Playlist;
-import com.musicapp.api.model.Track;
-import com.musicapp.api.repository.PlaylistRepository;
-import com.musicapp.api.repository.TrackRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import com.musicapp.api.service.PlaylistService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/playlists")
+@RequestMapping("/api/v1/playlists")
+@RequiredArgsConstructor
 public class PlaylistController {
 
-    @Autowired
-    private PlaylistRepository playlistRepository;
-
-    @Autowired
-    private TrackRepository trackRepository;
+    private final PlaylistService playlistService;
 
     @GetMapping
-    public List<Playlist> getAllPlaylists() {
-        return playlistRepository.findAll();
+    public List<Playlist> getAll() {
+        return playlistService.getAllPlaylists();
+    }
+
+    @GetMapping("/{id}")
+    public Playlist getById(@PathVariable Long id) {
+        return playlistService.findById(id);
     }
 
     @PostMapping
-    public Playlist createPlaylist(@RequestBody Playlist playlist) {
-        return playlistRepository.save(playlist);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Playlist create(@RequestBody Map<String, String> body) {
+        return playlistService.create(body.get("name"), body.get("coverUrl"));
     }
 
     @PostMapping("/{playlistId}/tracks/{trackId}")
-    public ResponseEntity<Playlist> addTrackToPlaylist(
-            @PathVariable Long playlistId,
-            @PathVariable Long trackId) {
+    public Playlist addTrack(@PathVariable Long playlistId, @PathVariable Long trackId) {
+        return playlistService.addTrack(playlistId, trackId);
+    }
 
-        Optional<Playlist> optionalPlaylist = playlistRepository.findById(playlistId);
-        Optional<Track> optionalTrack = trackRepository.findById(trackId);
+    @DeleteMapping("/{playlistId}/tracks/{trackId}")
+    public Playlist removeTrack(@PathVariable Long playlistId, @PathVariable Long trackId) {
+        return playlistService.removeTrack(playlistId, trackId);
+    }
 
-        if (optionalPlaylist.isPresent() && optionalTrack.isPresent()) {
-            Playlist playlist = optionalPlaylist.get();
-            Track track = optionalTrack.get();
-
-            playlist.addTrack(track);
-            Playlist updatedPlaylist = playlistRepository.save(playlist);
-            return ResponseEntity.ok(updatedPlaylist);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        playlistService.delete(id);
     }
 }

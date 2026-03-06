@@ -6,5 +6,13 @@ data class Track(
     val artist: String,
     val album: String,
     val coverArtUrl: String?,
-    val streamUrl: String
+    val streamUrl: String,
+    val durationMs: Long = 0L,
+    val liked: Boolean = false,
+    val hlsUrl: String? = null,
+    val artistId: Long? = null,
+    val albumId: Long? = null,
+    val albumTitle: String? = null,
+    val isDownloaded: Boolean = false,
+    val localFilePath: String? = null
 )

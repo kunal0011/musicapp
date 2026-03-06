@@ -3,8 +3,10 @@ package com.musicapp.android.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.musicapp.android.models.Playlist
+import com.musicapp.android.models.Track
 import com.musicapp.android.repository.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,30 +21,37 @@ class LibraryViewModel @Inject constructor(
     private val _playlists = MutableStateFlow<List<Playlist>>(emptyList())
     val playlists: StateFlow<List<Playlist>> = _playlists.asStateFlow()
 
+    private val _likedTracks = MutableStateFlow<List<Track>>(emptyList())
+    val likedTracks: StateFlow<List<Track>> = _likedTracks.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    init {
-        loadPlaylists()
-    }
+    init { loadAll() }
 
-    fun loadPlaylists() {
+    fun loadAll() {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
 
-            repository.getPlaylists()
-                .onSuccess { playlists ->
-                    _playlists.value = playlists
-                }
-                .onFailure { error ->
-                    _errorMessage.value = error.message ?: "Failed to load playlists"
-                }
+            val playlistsDeferred = async { repository.getPlaylists() }
+            val likedDeferred = async { repository.getLikedTracks() }
+
+            playlistsDeferred.await().onSuccess { _playlists.value = it }
+                .onFailure { _errorMessage.value = it.message }
+
+            likedDeferred.await().onSuccess { _likedTracks.value = it }
 
             _isLoading.value = false
+        }
+    }
+
+    fun loadPlaylists() {
+        viewModelScope.launch {
+            repository.getPlaylists().onSuccess { _playlists.value = it }
         }
     }
 
@@ -50,27 +59,17 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             repository.createPlaylist(name)
-                .onSuccess {
-                    loadPlaylists()
-                }
-                .onFailure { error ->
-                    _errorMessage.value = error.message ?: "Failed to create playlist"
-                }
+                .onSuccess { loadPlaylists() }
+                .onFailure { _errorMessage.value = it.message }
             _isLoading.value = false
         }
     }
 
     fun addTrackToPlaylist(playlistId: Long, trackId: Long) {
         viewModelScope.launch {
-            _isLoading.value = true
             repository.addTrackToPlaylist(playlistId, trackId)
-                .onSuccess {
-                    loadPlaylists() // Refresh playlists after adding track
-                }
-                .onFailure { error ->
-                    _errorMessage.value = error.message ?: "Failed to add track to playlist"
-                }
-            _isLoading.value = false
+                .onSuccess { loadPlaylists() }
+                .onFailure { _errorMessage.value = it.message }
         }
     }
 }

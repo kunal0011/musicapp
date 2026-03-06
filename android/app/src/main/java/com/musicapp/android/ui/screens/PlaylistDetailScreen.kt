@@ -1,29 +1,18 @@
 package com.musicapp.android.ui.screens
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.musicapp.android.ui.navigation.Screen
+import com.musicapp.android.ui.components.TrackItem
 import com.musicapp.android.viewmodels.LibraryViewModel
 import com.musicapp.android.viewmodels.PlayerViewModel
 
@@ -44,34 +33,29 @@ fun PlaylistDetailScreen(
                 title = { Text(playlist?.name ?: "Playlist") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         }
-    ) { paddingValues ->
+    ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(padding)
         ) {
-            if (playlist == null) {
-                Text(
-                    text = "Playlist not found.",
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            } else if (playlist.tracks.isEmpty()) {
-                Text(
-                    text = "This playlist is empty.",
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+            when {
+                playlist == null -> Text("Playlist not found", modifier = Modifier.align(Alignment.Center))
+                playlist.tracks.isEmpty() -> Text("This playlist is empty", modifier = Modifier.align(Alignment.Center))
+                else -> LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
                     itemsIndexed(playlist.tracks) { index, track ->
-                        TrackItem(track = track, onClick = {
-                            playerViewModel.playTracks(playlist.tracks, index)
-                            playerViewModel.requestExpand()
-                        })
+                        TrackItem(
+                            track = track,
+                            onClick = {
+                                playerViewModel.playTracks(playlist.tracks, index)
+                                playerViewModel.requestExpand()
+                            }
+                        )
                     }
                 }
             }

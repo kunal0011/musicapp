@@ -1,97 +1,114 @@
 package com.musicapp.android.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.musicapp.android.ui.theme.Brand
+import com.musicapp.android.ui.theme.SurfaceElevated
 import com.musicapp.android.viewmodels.PlayerViewModel
 
+/**
+ * Spotify-style mini player: cover art + title/artist + play/pause only.
+ * Green progress bar at top.
+ */
 @Composable
-fun MiniPlayer(
-    playerViewModel: PlayerViewModel = hiltViewModel()
-) {
-    val currentTrackTitle by playerViewModel.currentTrackTitle.collectAsState()
-    val currentArtist by playerViewModel.currentArtist.collectAsState()
-    val currentCoverUrl by playerViewModel.currentCoverUrl.collectAsState()
+fun MiniPlayer(playerViewModel: PlayerViewModel) {
+    val title by playerViewModel.currentTrackTitle.collectAsState()
+    val artist by playerViewModel.currentArtist.collectAsState()
+    val coverUrl by playerViewModel.currentCoverUrl.collectAsState()
     val isPlaying by playerViewModel.isPlaying.collectAsState()
+    val currentPosition by playerViewModel.currentPosition.collectAsState()
+    val duration by playerViewModel.duration.collectAsState()
 
-    Row(
+    val progress = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
+
+    Surface(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = SurfaceElevated,
+        tonalElevation = 0.dp,
+        onClick = { playerViewModel.requestExpand() }
     ) {
-        // Album Art
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            if (currentCoverUrl.isNotEmpty()) {
+        Column {
+            // Green progress bar at top
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp),
+                color = Brand,
+                trackColor = Color.Transparent
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Cover art
                 AsyncImage(
-                    model = currentCoverUrl,
+                    model = coverUrl,
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(4.dp)),
                     contentScale = ContentScale.Crop
                 )
-            }
-        }
-        
-        // Text Info
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = currentTrackTitle,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = currentArtist,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
 
-        // Play/Pause Button
-        IconButton(onClick = { playerViewModel.togglePlayPause() }) {
-            Icon(
-                painter = if (isPlaying) painterResource(android.R.drawable.ic_media_pause) else painterResource(android.R.drawable.ic_media_play),
-                contentDescription = "Play/Pause",
-                modifier = Modifier.size(28.dp)
-            )
+                // Title + artist
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 10.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = artist,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.6f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Play/Pause only (Spotify mini player pattern)
+                IconButton(
+                    onClick = { playerViewModel.togglePlayPause() },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
         }
     }
 }
