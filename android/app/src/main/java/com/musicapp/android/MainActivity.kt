@@ -7,8 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -134,7 +134,7 @@ private fun SpotifyBottomNav(navController: NavController) {
         NavItem(Screen.Search, Icons.Rounded.Search, "Search"),
         NavItem(Screen.Library, Icons.Rounded.LibraryMusic, "Library"),
         NavItem(Screen.LikedSongs, Icons.Rounded.Favorite, "Liked"),
-        NavItem(Screen.Queue, Icons.Rounded.QueueMusic, "Queue"),
+        NavItem(Screen.Queue, Icons.AutoMirrored.Rounded.QueueMusic, "Queue"),
     )
     NavigationBar(
         containerColor = SurfaceDark.copy(alpha = 0.95f),

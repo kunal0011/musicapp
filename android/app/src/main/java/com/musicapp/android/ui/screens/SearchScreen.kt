@@ -16,15 +16,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.musicapp.android.ui.components.TrackItem
 import com.musicapp.android.ui.theme.Brand
-import com.musicapp.android.ui.theme.SurfaceElevated
 import com.musicapp.android.viewmodels.PlayerViewModel
 import com.musicapp.android.viewmodels.SearchViewModel
 
@@ -44,14 +41,12 @@ private val categoryNames = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    navController: NavController,
     searchViewModel: SearchViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val query by searchViewModel.searchQuery.collectAsState()
     val results by searchViewModel.searchResults.collectAsState()
     val isLoading by searchViewModel.isLoading.collectAsState()
-    val error by searchViewModel.errorMessage.collectAsState()
     val currentTrackId by playerViewModel.currentTrackId.collectAsState()
 
     Column(

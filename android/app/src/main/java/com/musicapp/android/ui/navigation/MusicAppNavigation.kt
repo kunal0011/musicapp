@@ -24,10 +24,10 @@ fun MusicAppNavigation(
         modifier = Modifier.padding(paddingValues)
     ) {
         composable(Screen.Home.route) {
-            HomeScreen(navController = navController, playerViewModel = playerViewModel)
+            HomeScreen(playerViewModel = playerViewModel)
         }
         composable(Screen.Search.route) {
-            SearchScreen(navController = navController, playerViewModel = playerViewModel)
+            SearchScreen(playerViewModel = playerViewModel)
         }
         composable(Screen.Library.route) {
             LibraryScreen(navController = navController)

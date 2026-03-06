@@ -24,8 +24,6 @@ import com.musicapp.android.ui.theme.Brand
 fun TrackItem(
     track: Track,
     onClick: () -> Unit,
-    onLikeToggle: ((Track) -> Unit)? = null,
-    showLikeButton: Boolean = true,
     isCurrentlyPlaying: Boolean = false
 ) {
     Row(
