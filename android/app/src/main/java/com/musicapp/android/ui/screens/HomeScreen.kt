@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.musicapp.android.models.Track
+import com.musicapp.android.ui.components.ShimmerTrackList
+import com.musicapp.android.ui.components.SpotifyBackground
 import com.musicapp.android.ui.components.TrackItem
 import com.musicapp.android.ui.theme.Brand
 import com.musicapp.android.ui.theme.SurfaceElevated
@@ -38,99 +42,127 @@ fun HomeScreen(
     val errorMessage by homeViewModel.errorMessage.collectAsState()
     val currentTrackId by playerViewModel.currentTrackId.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent),
-        contentPadding = PaddingValues(bottom = 120.dp)
-    ) {
-        // Greeting
-        item {
-            Text(
-                text = greeting(),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
-            )
-        }
+    val madeForYou = remember(tracks) { tracks.take(12) }
 
-        // Quick-play grid — 2 columns, 6 items max (Spotify Home signature)
-        if (recentlyPlayed.isNotEmpty()) {
+    SpotifyBackground {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 128.dp)
+        ) {
             item {
-                QuickPlayGrid(
-                    tracks = recentlyPlayed.take(6),
-                    allTracks = recentlyPlayed,
-                    playerViewModel = playerViewModel
-                )
-                Spacer(Modifier.height(24.dp))
+                HomeHeader()
             }
-        }
 
-        // Recently Played carousel
-        if (recentlyPlayed.size > 6) {
-            item {
-                SectionHeader("Recently Played")
-            }
-            item {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    itemsIndexed(recentlyPlayed.drop(6).take(10)) { index, track ->
-                        SpotifyTrackCard(track = track, onClick = {
-                            playerViewModel.playTracks(recentlyPlayed, index + 6)
-                            playerViewModel.requestExpand()
-                        })
-                    }
-                }
-                Spacer(Modifier.height(24.dp))
-            }
-        }
-
-        // All tracks
-        item { SectionHeader("All Songs") }
-
-        when {
-            isLoading -> item {
-                Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Brand, strokeWidth = 2.dp)
+            if (recentlyPlayed.isNotEmpty()) {
+                item { SectionHeader(title = "Jump back in", subtitle = "Your recent favorites") }
+                item {
+                    QuickPlayGrid(
+                        tracks = recentlyPlayed.take(6),
+                        allTracks = recentlyPlayed,
+                        playerViewModel = playerViewModel
+                    )
+                    Spacer(Modifier.height(20.dp))
                 }
             }
-            errorMessage != null -> item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error)
-                    Spacer(Modifier.height(12.dp))
-                    Button(
-                        onClick = { homeViewModel.load() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Brand)
+
+            if (recentlyPlayed.size > 6) {
+                item { SectionHeader(title = "Recently played") }
+                item {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Retry", color = Color.Black)
+                        itemsIndexed(recentlyPlayed.drop(6).take(10)) { index, track ->
+                            SpotifyTrackCard(track = track, onClick = {
+                                playerViewModel.playTracks(recentlyPlayed, index + 6)
+                                playerViewModel.requestExpand()
+                            })
+                        }
                     }
+                    Spacer(Modifier.height(16.dp))
                 }
             }
-            else -> itemsIndexed(tracks) { index, track ->
-                TrackItem(
-                    track = track,
-                    isCurrentlyPlaying = track.id == currentTrackId,
-                    onClick = {
-                        playerViewModel.playTracks(tracks, index)
-                        playerViewModel.requestExpand()
+
+            if (madeForYou.isNotEmpty()) {
+                item { SectionHeader(title = "Made for you", subtitle = "Fresh picks based on your plays") }
+                item {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        itemsIndexed(madeForYou) { index, track ->
+                            SpotifyTrackCard(track = track, onClick = {
+                                playerViewModel.playTracks(madeForYou, index)
+                                playerViewModel.requestExpand()
+                            })
+                        }
                     }
-                )
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
+
+            item { SectionHeader(title = "All songs", subtitle = "${tracks.size} tracks") }
+
+            when {
+                isLoading -> item {
+                    ShimmerTrackList(count = 8)
+                }
+
+                errorMessage != null -> item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = errorMessage ?: "Something went wrong",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Button(
+                            onClick = { homeViewModel.load() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Brand)
+                        ) {
+                            Text("Retry", color = Color.Black)
+                        }
+                    }
+                }
+
+                else -> itemsIndexed(tracks) { index, track ->
+                    TrackItem(
+                        track = track,
+                        isCurrentlyPlaying = track.id == currentTrackId,
+                        onClick = {
+                            playerViewModel.playTracks(tracks, index)
+                            playerViewModel.requestExpand()
+                        }
+                    )
+                }
             }
         }
     }
 }
 
-/**
- * Spotify-style 2-column quick-play grid showing 6 recently played tracks.
- */
+@Composable
+private fun HomeHeader() {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(
+            text = greeting(),
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = "Keep the music going",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+    }
+}
+
 @Composable
 private fun QuickPlayGrid(
     tracks: List<Track>,
@@ -150,7 +182,7 @@ private fun QuickPlayGrid(
                     Surface(
                         modifier = Modifier
                             .weight(1f)
-                            .height(56.dp),
+                            .height(64.dp),
                         shape = RoundedCornerShape(6.dp),
                         color = SurfaceElevated,
                         onClick = {
@@ -162,19 +194,39 @@ private fun QuickPlayGrid(
                         }
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            AsyncImage(
-                                model = track.coverArtUrl,
-                                contentDescription = null,
+                            Box(
                                 modifier = Modifier
-                                    .size(56.dp)
+                                    .size(64.dp)
                                     .clip(RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)),
-                                contentScale = ContentScale.Crop
-                            )
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (!track.coverArtUrl.isNullOrBlank()) {
+                                    AsyncImage(
+                                        model = track.coverArtUrl,
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color(0xFF1F1F1F)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.MusicNote,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
                             Text(
                                 text = track.title,
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -192,14 +244,22 @@ private fun QuickPlayGrid(
 }
 
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-    )
+private fun SectionHeader(title: String, subtitle: String? = null) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        if (!subtitle.isNullOrBlank()) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 @Composable
@@ -210,28 +270,42 @@ private fun SpotifyTrackCard(track: Track, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.Start
     ) {
-        AsyncImage(
-            model = track.coverArtUrl,
-            contentDescription = track.title,
+        Box(
             modifier = Modifier
                 .size(140.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(SurfaceElevated),
-            contentScale = ContentScale.Crop
-        )
+            contentAlignment = Alignment.Center
+        ) {
+            if (!track.coverArtUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = track.coverArtUrl,
+                    contentDescription = track.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Rounded.MusicNote,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
         Spacer(Modifier.height(8.dp))
         Text(
             text = track.title,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Text(
             text = track.artist,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.6f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )

@@ -1,13 +1,11 @@
 package com.musicapp.android.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
@@ -18,19 +16,19 @@ private val SpotifyDarkScheme = darkColorScheme(
     onPrimaryContainer = Color.White,
     secondary = BrandLight,
     onSecondary = Color.Black,
-    secondaryContainer = SurfaceElevated,
+    secondaryContainer = SurfaceRaised,
     onSecondaryContainer = TextPrimary,
     tertiary = AccentAmber,
     onTertiary = Color.Black,
-    background = SurfaceBlack,
+    background = BackgroundBottom,
     onBackground = TextPrimary,
     surface = SurfaceDark,
     onSurface = TextPrimary,
     surfaceVariant = SurfaceElevated,
     onSurfaceVariant = TextSecondary,
     surfaceContainerHighest = SurfaceHighlight,
-    outline = SurfaceHighlight,
-    outlineVariant = Color(0xFF404040),
+    outline = SurfaceStroke,
+    outlineVariant = SurfaceHighlight,
     error = AccentRed,
     onError = Color.White,
     inverseSurface = TextPrimary,

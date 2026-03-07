@@ -12,6 +12,14 @@ val SurfaceBlack = Color(0xFF121212)
 val SurfaceDark = Color(0xFF181818)
 val SurfaceElevated = Color(0xFF282828)
 val SurfaceHighlight = Color(0xFF333333)
+val SurfaceRaised = Color(0xFF1F1F1F)
+val SurfaceStroke = Color(0xFF303030)
+
+// Background gradients
+val BackgroundTop = Color(0xFF1D1D1D)
+val BackgroundBottom = Color(0xFF0B0B0B)
+val HeroGradientStart = Color(0xFF2A2A2A)
+val HeroGradientEnd = Color(0xFF121212)
 
 // Text
 val TextPrimary = Color(0xFFFFFFFF)

@@ -5,14 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -21,14 +18,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
+import com.musicapp.android.data.local.TrackDao
 import com.musicapp.android.ui.components.MiniPlayer
+import com.musicapp.android.ui.components.SpotifyBackground
 import com.musicapp.android.ui.navigation.MusicAppNavigation
 import com.musicapp.android.ui.navigation.Screen
 import com.musicapp.android.ui.screens.LoginScreen
 import com.musicapp.android.ui.screens.PlayerScreen
 import com.musicapp.android.ui.screens.RegisterScreen
 import com.musicapp.android.ui.theme.MusicAppTheme
-import com.musicapp.android.ui.theme.SurfaceBlack
 import com.musicapp.android.ui.theme.SurfaceDark
 import com.musicapp.android.utils.TokenManager
 import com.musicapp.android.viewmodels.PlayerViewModel
@@ -41,13 +39,16 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var tokenManager: TokenManager
 
+    @Inject
+    lateinit var trackDao: TrackDao
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MusicAppTheme {
                 if (tokenManager.isLoggedIn()) {
-                    MainApp()
+                    MainApp(trackDao = trackDao)
                 } else {
                     AuthFlow(onAuthSuccess = { recreate() })
                 }
@@ -77,17 +78,16 @@ private fun AuthFlow(onAuthSuccess: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MainApp() {
+private fun MainApp(trackDao: TrackDao) {
     val navController = rememberNavController()
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val currentTrackTitle by playerViewModel.currentTrackTitle.collectAsState()
     val showPlayerSheet by playerViewModel.showPlayerSheet.collectAsState()
     val hasTrack = currentTrackTitle != "No track selected"
 
-    Box(
+    SpotifyBackground(
         modifier = Modifier
             .fillMaxSize()
-            .background(SurfaceBlack)
             .statusBarsPadding()
     ) {
         Scaffold(
@@ -110,7 +110,8 @@ private fun MainApp() {
             MusicAppNavigation(
                 navController = navController,
                 paddingValues = innerPadding,
-                playerViewModel = playerViewModel
+                playerViewModel = playerViewModel,
+                trackDao = trackDao
             )
         }
 
@@ -132,10 +133,15 @@ private fun SpotifyBottomNav(navController: NavController) {
     val items = listOf(
         NavItem(Screen.Home, Icons.Rounded.Home, "Home"),
         NavItem(Screen.Search, Icons.Rounded.Search, "Search"),
-        NavItem(Screen.Library, Icons.Rounded.LibraryMusic, "Library"),
-        NavItem(Screen.LikedSongs, Icons.Rounded.Favorite, "Liked"),
-        NavItem(Screen.Queue, Icons.AutoMirrored.Rounded.QueueMusic, "Queue"),
+        NavItem(Screen.Library, Icons.Rounded.LibraryMusic, "Your Library"),
     )
+    val libraryRoutes = setOf(
+        Screen.Library.route,
+        Screen.LikedSongs.route,
+        Screen.Queue.route,
+        Screen.Offline.route,
+    )
+
     NavigationBar(
         containerColor = SurfaceDark.copy(alpha = 0.95f),
         contentColor = Color.White,
@@ -145,6 +151,14 @@ private fun SpotifyBottomNav(navController: NavController) {
         val current = entry?.destination?.route
 
         items.forEach { item ->
+            val isSelected = when (item.screen) {
+                Screen.Library -> {
+                    current in libraryRoutes || current?.startsWith("playlist_detail") == true
+                }
+
+                else -> current == item.screen.route
+            }
+
             NavigationBarItem(
                 icon = {
                     Icon(
@@ -159,7 +173,7 @@ private fun SpotifyBottomNav(navController: NavController) {
                         style = MaterialTheme.typography.labelSmall
                     )
                 },
-                selected = current == item.screen.route,
+                selected = isSelected,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = Color.White,
                     selectedTextColor = Color.White,

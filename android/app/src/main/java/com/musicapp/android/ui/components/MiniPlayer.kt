@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.*
@@ -11,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -20,12 +20,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.musicapp.android.ui.theme.Brand
 import com.musicapp.android.ui.theme.SurfaceElevated
+import com.musicapp.android.ui.theme.TextSecondary
 import com.musicapp.android.viewmodels.PlayerViewModel
 
-/**
- * Spotify-style mini player: cover art + title/artist + play/pause only.
- * Green progress bar at top.
- */
 @Composable
 fun MiniPlayer(playerViewModel: PlayerViewModel) {
     val title by playerViewModel.currentTrackTitle.collectAsState()
@@ -40,40 +37,43 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(8.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(10.dp),
         color = SurfaceElevated,
-        tonalElevation = 0.dp,
+        tonalElevation = 2.dp,
         onClick = { playerViewModel.requestExpand() }
     ) {
         Column {
-            // Green progress bar at top
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp),
-                color = Brand,
-                trackColor = Color.Transparent
-            )
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Cover art
-                AsyncImage(
-                    model = coverUrl,
-                    contentDescription = null,
+                Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(RoundedCornerShape(4.dp)),
-                    contentScale = ContentScale.Crop
-                )
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFF1F1F1F)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (coverUrl.isBlank()) {
+                        Icon(
+                            imageVector = Icons.Rounded.MusicNote,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        AsyncImage(
+                            model = coverUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
 
-                // Title + artist
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -83,20 +83,19 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
                         text = title,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = artist,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                // Play/Pause only (Spotify mini player pattern)
                 IconButton(
                     onClick = { playerViewModel.togglePlayPause() },
                     modifier = Modifier.size(40.dp)
@@ -104,11 +103,20 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         contentDescription = if (isPlaying) "Pause" else "Play",
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(28.dp)
                     )
                 }
             }
+
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp),
+                color = Brand,
+                trackColor = Color.White.copy(alpha = 0.12f)
+            )
         }
     }
 }

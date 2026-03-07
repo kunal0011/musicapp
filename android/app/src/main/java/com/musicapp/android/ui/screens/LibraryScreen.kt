@@ -6,9 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,10 +27,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.musicapp.android.models.Playlist
+import com.musicapp.android.ui.components.SpotifyBackground
 import com.musicapp.android.ui.navigation.Screen
 import com.musicapp.android.ui.theme.Brand
 import com.musicapp.android.ui.theme.SurfaceElevated
 import com.musicapp.android.viewmodels.LibraryViewModel
+
+private enum class LibraryFilter(val label: String) {
+    Playlists("Playlists"),
+    Collections("Collections")
+}
 
 @Composable
 fun LibraryScreen(
@@ -35,121 +44,162 @@ fun LibraryScreen(
     libraryViewModel: LibraryViewModel = hiltViewModel()
 ) {
     val playlists by libraryViewModel.playlists.collectAsState()
+    val likedTracks by libraryViewModel.likedTracks.collectAsState()
     val isLoading by libraryViewModel.isLoading.collectAsState()
     val errorMessage by libraryViewModel.errorMessage.collectAsState()
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var newPlaylistName by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("Playlists") }
+    var selectedFilter by remember { mutableStateOf(LibraryFilter.Playlists) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent)
-    ) {
-        // Header with + button
-        Row(
+    SpotifyBackground {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .background(Color.Transparent)
         ) {
-            Text(
-                "Your Library",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            IconButton(onClick = { showCreateDialog = true }) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "Create",
-                    tint = Color.White,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-        }
-
-        // Filter chips row (Spotify pattern)
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val filters = listOf("Playlists", "Artists", "Albums", "Downloaded")
-            items(filters) { filter ->
-                FilterChip(
-                    selected = selectedFilter == filter,
-                    onClick = { selectedFilter = filter },
-                    label = {
-                        Text(
-                            filter,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = if (selectedFilter == filter) Color.Black else Color.White
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = SurfaceElevated,
-                        selectedContainerColor = Brand,
-                        selectedLabelColor = Color.Black
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                    border = null
-                )
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        // Content
-        Box(modifier = Modifier.fillMaxSize()) {
-            when {
-                isLoading && playlists.isEmpty() -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = Brand,
-                        strokeWidth = 2.dp
-                    )
-                }
-                errorMessage != null -> {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
                     Text(
-                        text = "Error: $errorMessage",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center)
+                        "Your Library",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "${playlists.size} playlists • ${likedTracks.size} liked songs",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                playlists.isEmpty() -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            Icons.Default.LibraryMusic,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = Color.White.copy(alpha = 0.4f)
+                IconButton(onClick = { showCreateDialog = true }) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Create playlist",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(LibraryFilter.values().toList()) { filter ->
+                    FilterChip(
+                        selected = selectedFilter == filter,
+                        onClick = { selectedFilter = filter },
+                        label = {
+                            Text(
+                                filter.label,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (selectedFilter == filter) Color.Black else MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = SurfaceElevated,
+                            selectedContainerColor = Brand,
+                            selectedLabelColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        border = null
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            LibraryQuickActions(
+                onLikedClick = { navController.navigate(Screen.LikedSongs.route) },
+                onOfflineClick = { navController.navigate(Screen.Offline.route) },
+                onQueueClick = { navController.navigate(Screen.Queue.route) }
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    isLoading && playlists.isEmpty() -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            color = Brand,
+                            strokeWidth = 2.dp
                         )
-                        Spacer(Modifier.height(16.dp))
-                        Text("No playlists yet", color = Color.White.copy(alpha = 0.6f))
-                        Spacer(Modifier.height(8.dp))
-                        Button(
-                            onClick = { showCreateDialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = Brand)
+                    }
+
+                    errorMessage != null -> {
+                        Column(
+                            modifier = Modifier.align(Alignment.Center),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Create Playlist", color = Color.Black, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = errorMessage ?: "Failed to load library",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            Button(
+                                onClick = { libraryViewModel.loadAll() },
+                                colors = ButtonDefaults.buttonColors(containerColor = Brand)
+                            ) {
+                                Text("Retry", color = Color.Black)
+                            }
                         }
                     }
-                }
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 120.dp)
-                    ) {
-                        items(playlists) { playlist ->
-                            SpotifyPlaylistItem(
-                                playlist = playlist,
-                                onClick = { navController.navigate(Screen.PlaylistDetail.createRoute(playlist.id)) }
-                            )
+
+                    selectedFilter == LibraryFilter.Playlists && playlists.isEmpty() -> {
+                        EmptyPlaylistsState(onCreateClick = { showCreateDialog = true })
+                    }
+
+                    selectedFilter == LibraryFilter.Collections -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 120.dp)
+                        ) {
+                            item {
+                                CollectionRow(
+                                    icon = Icons.Default.Favorite,
+                                    title = "Liked Songs",
+                                    subtitle = "${likedTracks.size} songs",
+                                    onClick = { navController.navigate(Screen.LikedSongs.route) }
+                                )
+                            }
+                            item {
+                                CollectionRow(
+                                    icon = Icons.Default.Download,
+                                    title = "Downloaded",
+                                    subtitle = "Available offline",
+                                    onClick = { navController.navigate(Screen.Offline.route) }
+                                )
+                            }
+                            item {
+                                CollectionRow(
+                                    icon = Icons.AutoMirrored.Filled.QueueMusic,
+                                    title = "Queue",
+                                    subtitle = "Up next and now playing",
+                                    onClick = { navController.navigate(Screen.Queue.route) }
+                                )
+                            }
+                        }
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 120.dp)
+                        ) {
+                            items(playlists) { playlist ->
+                                SpotifyPlaylistItem(
+                                    playlist = playlist,
+                                    onClick = { navController.navigate(Screen.PlaylistDetail.createRoute(playlist.id)) }
+                                )
+                            }
                         }
                     }
                 }
@@ -197,10 +247,152 @@ fun LibraryScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showCreateDialog = false }) {
-                    Text("Cancel", color = Color.White.copy(alpha = 0.7f))
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun EmptyPlaylistsState(onCreateClick: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.LibraryMusic,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "No playlists yet",
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium
+        )
+        Text(
+            "Create your first playlist to save favorite tracks",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+        )
+        Button(
+            onClick = onCreateClick,
+            colors = ButtonDefaults.buttonColors(containerColor = Brand)
+        ) {
+            Text("Create Playlist", color = Color.Black, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun LibraryQuickActions(
+    onLikedClick: () -> Unit,
+    onOfflineClick: () -> Unit,
+    onQueueClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        QuickActionTile(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Default.Favorite,
+            label = "Liked",
+            onClick = onLikedClick
+        )
+        QuickActionTile(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Default.Download,
+            label = "Offline",
+            onClick = onOfflineClick
+        )
+        QuickActionTile(
+            modifier = Modifier.weight(1f),
+            icon = Icons.AutoMirrored.Filled.QueueMusic,
+            label = "Queue",
+            onClick = onQueueClick
+        )
+    }
+}
+
+@Composable
+private fun QuickActionTile(
+    modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier,
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = SurfaceElevated,
+        tonalElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
+private fun CollectionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(SurfaceElevated),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -230,14 +422,14 @@ private fun SpotifyPlaylistItem(playlist: Playlist, onClick: () -> Unit) {
                 text = playlist.name,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "Playlist • ${playlist.tracks.size} songs",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.6f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
